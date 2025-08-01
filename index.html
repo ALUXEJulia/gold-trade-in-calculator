@@ -15,38 +15,38 @@
   </style>
 </head>
 <body>
-  <h2>今日回收＆賣出價</h2>
+  <h2>ALUXE Gold Trade-IN Calculator</h2>
 
-  <label>金價 (未稅): <input type="number" id="goldPrice" step="0.01" oninput="updateGoldTax()"></label>
+  <label>金價 (未稅): <input type="number" id="goldPrice" step="0.01" oninput="updateGoldTax(); calculate()"></label>
   <div class="tax-note" id="goldTaxed"></div>
 
   <div class="section">
-    <label>回收金重 (g): <input type="number" id="recycleWeight" step="0.01" oninput="updateRecycleFormula()"></label>
+    <label>回收金重 (g): <input type="number" id="recycleWeight" step="0.01" oninput="updateRecycleFormula(); calculate()"></label>
     <div class="formula" id="recycleFormula"></div>
     <div class="formula" id="recycleFormulaUntaxed"></div>
     <div class="formula" id="recycleFormulaResult"></div>
   </div>
 
   <div class="section">
-    <label>商品一 金重 (g): <input type="number" id="prod1Weight" step="0.01" oninput="updateProduct1Formula()"></label>
+    <label>商品一 金重 (g): <input type="number" id="prod1Weight" step="0.01" oninput="updateProduct1Formula(); calculate()"></label>
     <div class="formula" id="product1Formula"></div>
     <div class="formula" id="product1FormulaUntaxed"></div>
     <div class="formula" id="product1FormulaResult"></div>
 
-    <label>商品一 工錢 (未稅): <input type="number" id="prod1Labor" step="0.01" oninput="updateLaborTax()"></label>
+    <label>商品一 工錢 (未稅): <input type="number" id="prod1Labor" step="0.01" oninput="updateLaborTax(); calculate()"></label>
     <div class="tax-note" id="laborTaxed"></div>
 
-    <label>商品二 金重 (g): <input type="number" id="prod2Weight" step="0.01" oninput="updateProduct2Formula()"></label>
+    <label>商品二 金重 (g): <input type="number" id="prod2Weight" step="0.01" oninput="updateProduct2Formula(); calculate()"></label>
     <div class="formula" id="product2Formula"></div>
     <div class="formula" id="product2FormulaUntaxed"></div>
     <div class="formula" id="product2FormulaResult"></div>
 
-    <label>商品二 工錢 (未稅): <input type="number" id="prod2Labor" step="0.01" oninput="updateLaborTax2()"></label>
+    <label>商品二 工錢 (未稅): <input type="number" id="prod2Labor" step="0.01" oninput="updateLaborTax2(); calculate()"></label>
     <div class="tax-note" id="laborTaxed2"></div>
   </div>
 
   <div class="section">
-    <button onclick="calculate()" style="padding: 10px;">計算差額</button>
+    
     <div class="result" id="result"></div>
     <div class="breakdown" id="breakdown"></div>
   </div>
