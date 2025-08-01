@@ -11,6 +11,7 @@
     .section { margin-top: 20px; border-top: 1px dashed #aaa; padding-top: 10px; }
     .result { margin-top: 20px; font-weight: bold; font-size: 1.3em; color: #c00; }
     .tax-note, .formula { font-size: 0.9em; color: #555; margin-top: 5px; }
+    .breakdown { font-size: 0.95em; color: #333; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -47,6 +48,7 @@
   <div class="section">
     <button onclick="calculate()" style="padding: 10px;">計算差額</button>
     <div class="result" id="result"></div>
+    <div class="breakdown" id="breakdown"></div>
   </div>
 
   <script>
@@ -114,14 +116,23 @@
       const p2w = parseFloat(document.getElementById('prod2Weight').value) || 0;
       const p2l = parseFloat(document.getElementById('prod2Labor').value) || 0;
 
-      const recycleTotal = addTax(rw * gp * 0.85);
-      const prod1Total = p1w * gp + p1l;
-      const prod2Total = p2w * gp + p2l;
-      const total = addTax(prod1Total + prod2Total);
+      const prod1WeightTaxed = gp * p1w * TAX;
+      const prod1LaborTaxed = p1l * TAX;
+      const prod2WeightTaxed = gp * p2w * TAX;
+      const prod2LaborTaxed = p2l * TAX;
 
+      const recycleTotal = addTax(rw * gp * 0.85);
+      const total = prod1WeightTaxed + prod1LaborTaxed + prod2WeightTaxed + prod2LaborTaxed;
       const diff = Math.round(total - recycleTotal);
 
       document.getElementById('result').textContent = `應付差額（含稅）：$${diff}`;
+      document.getElementById('breakdown').innerHTML = `計算式：<br>
+        商品一金額: $${prod1WeightTaxed.toFixed(2)}<br>
+        商品一工錢: $${prod1LaborTaxed.toFixed(2)}<br>
+        商品二金額: $${prod2WeightTaxed.toFixed(2)}<br>
+        商品二工錢: $${prod2LaborTaxed.toFixed(2)}<br>
+        回收金額: -$${recycleTotal.toFixed(2)}<br>
+        合計 = $${total.toFixed(2)} - $${recycleTotal.toFixed(2)} = $${(total - recycleTotal).toFixed(2)}`;
     }
   </script>
 </body>
