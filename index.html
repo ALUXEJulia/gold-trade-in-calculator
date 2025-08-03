@@ -1,138 +1,153 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gold Trade-in Calculator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ALUXE Gold Trade-IN Calculator</title>
   <style>
-    body { font-family: Arial; max-width: 600px; margin: 30px auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
-    label { display: block; margin-top: 10px; }
-    input { width: 100%; padding: 6px; margin-top: 5px; }
-    .section { margin-top: 20px; border-top: 1px dashed #aaa; padding-top: 10px; }
-    .result { margin-top: 20px; font-weight: bold; font-size: 1.3em; color: #c00; }
-    .tax-note, .formula { font-size: 0.9em; color: #555; margin-top: 5px; }
-    .breakdown { font-size: 0.95em; color: #333; margin-top: 10px; }
+    body {
+      font-family: Arial;
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 5px;
+    }
+    .section {
+      margin-top: 20px;
+      border-top: 1px dashed #aaa;
+      padding-top: 10px;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 1.3em;
+      color: #c00;
+    }
+    .formula, .tax-note {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 5px;
+    }
+    .summary {
+      white-space: pre-line;
+      font-size: 0.95em;
+      margin-top: 10px;
+    }
+    button {
+      padding: 6px 12px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <h2>ALUXE Gold Trade-IN Calculator</h2>
 
-  <label>金價 (未稅): <input type="number" id="goldPrice" step="0.01" oninput="updateGoldTax(); calculate()"></label>
-  <div class="tax-note" id="goldTaxed"></div>
+  <label>999 Gold Price (未稅): <input type="number" id="goldPrice999" step="0.01" /></label>
+  <label>916 Gold Price (未稅): <input type="number" id="goldPrice916" step="0.01" /></label>
 
   <div class="section">
-    <label>回收金重 (g): <input type="number" id="recycleWeight" step="0.01" oninput="updateRecycleFormula(); calculate()"></label>
-    <div class="formula" id="recycleFormula"></div>
-    <div class="formula" id="recycleFormulaUntaxed"></div>
-    <div class="formula" id="recycleFormulaResult"></div>
+    <h4>回收商品</h4>
+    <div id="recycleItems"></div>
+    <button onclick="addRecycleItem()">➕ 新增回收商品</button>
   </div>
 
   <div class="section">
-    <label>商品一 金重 (g): <input type="number" id="prod1Weight" step="0.01" oninput="updateProduct1Formula(); calculate()"></label>
-    <div class="formula" id="product1Formula"></div>
-    <div class="formula" id="product1FormulaUntaxed"></div>
-    <div class="formula" id="product1FormulaResult"></div>
-
-    <label>商品一 工錢 (未稅): <input type="number" id="prod1Labor" step="0.01" oninput="updateLaborTax(); calculate()"></label>
-    <div class="tax-note" id="laborTaxed"></div>
-
-    <label>商品二 金重 (g): <input type="number" id="prod2Weight" step="0.01" oninput="updateProduct2Formula(); calculate()"></label>
-    <div class="formula" id="product2Formula"></div>
-    <div class="formula" id="product2FormulaUntaxed"></div>
-    <div class="formula" id="product2FormulaResult"></div>
-
-    <label>商品二 工錢 (未稅): <input type="number" id="prod2Labor" step="0.01" oninput="updateLaborTax2(); calculate()"></label>
-    <div class="tax-note" id="laborTaxed2"></div>
+    <h4>購買商品</h4>
+    <div id="purchaseItems"></div>
+    <button onclick="addPurchaseItem()">➕ 新增購買商品</button>
   </div>
 
   <div class="section">
-    
     <div class="result" id="result"></div>
-    <div class="breakdown" id="breakdown"></div>
+    <div class="summary" id="summary"></div>
   </div>
 
   <script>
     const TAX = 1.09;
+    let recycleCount = 0;
+    let purchaseCount = 0;
 
-    function updateGoldTax() {
-      const price = parseFloat(document.getElementById('goldPrice').value) || 0;
-      document.getElementById('goldTaxed').textContent = `含稅價: $${(price * TAX).toFixed(2)}`;
-      updateRecycleFormula();
-      updateProduct1Formula();
-      updateProduct2Formula();
+    function addRecycleItem() {
+      const container = document.getElementById('recycleItems');
+      const html = \`
+        <div id="recycle-\${recycleCount}">
+          <label>回收純度:
+            <select id="recyclePurity-\${recycleCount}">
+              <option value="999">999</option>
+              <option value="916">916</option>
+            </select>
+          </label>
+          <label>回收金重 (g): <input type="number" step="0.01" id="recycleWeight-\${recycleCount}" oninput="calculate()"/></label>
+        </div>
+      \`;
+      container.insertAdjacentHTML('beforeend', html);
+      recycleCount++;
     }
 
-    function updateLaborTax() {
-      const labor = parseFloat(document.getElementById('prod1Labor').value) || 0;
-      document.getElementById('laborTaxed').textContent = `含稅價: $${(labor * TAX).toFixed(2)}`;
-    }
-
-    function updateLaborTax2() {
-      const labor2 = parseFloat(document.getElementById('prod2Labor').value) || 0;
-      document.getElementById('laborTaxed2').textContent = `含稅價: $${(labor2 * TAX).toFixed(2)}`;
-    }
-
-    function addTax(value) {
-      return value * TAX;
-    }
-
-    function updateRecycleFormula() {
-      const gp = parseFloat(document.getElementById('goldPrice').value) || 0;
-      const rw = parseFloat(document.getElementById('recycleWeight').value) || 0;
-      const untaxed = gp * rw * 0.85;
-      const taxed = untaxed * TAX;
-      document.getElementById('recycleFormula').textContent = `${gp} × ${rw} × (1 - 15%) =`;
-      document.getElementById('recycleFormulaUntaxed').textContent = `未稅: $${untaxed.toFixed(2)}`;
-      document.getElementById('recycleFormulaResult').textContent = `含稅價: $${taxed.toFixed(2)}`;
-    }
-
-    function updateProduct1Formula() {
-      const gp = parseFloat(document.getElementById('goldPrice').value) || 0;
-      const p1w = parseFloat(document.getElementById('prod1Weight').value) || 0;
-      const untaxed = gp * p1w;
-      const taxed = untaxed * TAX;
-      document.getElementById('product1Formula').textContent = `${gp} × ${p1w} =`;
-      document.getElementById('product1FormulaUntaxed').textContent = `未稅: $${untaxed.toFixed(2)}`;
-      document.getElementById('product1FormulaResult').textContent = `含稅價: $${taxed.toFixed(2)}`;
-    }
-
-    function updateProduct2Formula() {
-      const gp = parseFloat(document.getElementById('goldPrice').value) || 0;
-      const p2w = parseFloat(document.getElementById('prod2Weight').value) || 0;
-      const untaxed = gp * p2w;
-      const taxed = untaxed * TAX;
-      document.getElementById('product2Formula').textContent = `${gp} × ${p2w} =`;
-      document.getElementById('product2FormulaUntaxed').textContent = `未稅: $${untaxed.toFixed(2)}`;
-      document.getElementById('product2FormulaResult').textContent = `含稅價: $${taxed.toFixed(2)}`;
+    function addPurchaseItem() {
+      const container = document.getElementById('purchaseItems');
+      const html = \`
+        <div id="purchase-\${purchaseCount}">
+          <label>商品 \${purchaseCount + 1} — 金重 (g): <input type="number" step="0.01" id="prodWeight-\${purchaseCount}" oninput="calculate()"/></label>
+          <div class="formula" id="prodFormula-\${purchaseCount}"></div>
+          <div class="formula" id="prodTax-\${purchaseCount}"></div>
+          <label>商品 \${purchaseCount + 1} — 工錢 (未稅): <input type="number" step="0.01" id="prodLabor-\${purchaseCount}" oninput="calculate()"/></label>
+          <div class="tax-note" id="prodLaborTax-\${purchaseCount}"></div>
+        </div>
+      \`;
+      container.insertAdjacentHTML('beforeend', html);
+      purchaseCount++;
     }
 
     function calculate() {
-      const gp = parseFloat(document.getElementById('goldPrice').value) || 0;
-      const rw = parseFloat(document.getElementById('recycleWeight').value) || 0;
+      const gp999 = parseFloat(document.getElementById('goldPrice999').value) || 0;
+      const gp916 = parseFloat(document.getElementById('goldPrice916').value) || 0;
 
-      const p1w = parseFloat(document.getElementById('prod1Weight').value) || 0;
-      const p1l = parseFloat(document.getElementById('prod1Labor').value) || 0;
+      let recycleTotal = 0;
+      for (let i = 0; i < recycleCount; i++) {
+        const purity = document.getElementById('recyclePurity-' + i).value;
+        const weight = parseFloat(document.getElementById('recycleWeight-' + i).value) || 0;
+        const price = purity === '999' ? gp999 : gp916;
+        const value = price * weight * 0.85;
+        recycleTotal += value * TAX;
+      }
 
-      const p2w = parseFloat(document.getElementById('prod2Weight').value) || 0;
-      const p2l = parseFloat(document.getElementById('prod2Labor').value) || 0;
+      let summary = '';
+      let purchaseTotal = 0;
+      for (let i = 0; i < purchaseCount; i++) {
+        const weight = parseFloat(document.getElementById('prodWeight-' + i).value) || 0;
+        const labor = parseFloat(document.getElementById('prodLabor-' + i).value) || 0;
 
-      const prod1WeightTaxed = gp * p1w * TAX;
-      const prod1LaborTaxed = p1l * TAX;
-      const prod2WeightTaxed = gp * p2w * TAX;
-      const prod2LaborTaxed = p2l * TAX;
+        const goldValue = weight * gp999;
+        const taxedGold = goldValue * TAX;
+        const taxedLabor = labor * TAX;
 
-      const recycleTotal = addTax(rw * gp * 0.85);
-      const total = prod1WeightTaxed + prod1LaborTaxed + prod2WeightTaxed + prod2LaborTaxed;
-      const diff = Math.round(total - recycleTotal);
+        document.getElementById('prodFormula-' + i).textContent = \`\${gp999} × \${weight} =\`;
+        document.getElementById('prodTax-' + i).textContent = \`未稅: $\${goldValue.toFixed(2)}  含稅價: $\${taxedGold.toFixed(2)}\`;
+        document.getElementById('prodLaborTax-' + i).textContent = \`含稅價: $\${taxedLabor.toFixed(2)}\`;
 
-      document.getElementById('result').textContent = `應付差額（含稅）：$${diff}`;
-      document.getElementById('breakdown').innerHTML = `計算式：<br>
-        商品一金額: $${prod1WeightTaxed.toFixed(2)}<br>
-        商品一工錢: $${prod1LaborTaxed.toFixed(2)}<br>
-        商品二金額: $${prod2WeightTaxed.toFixed(2)}<br>
-        商品二工錢: $${prod2LaborTaxed.toFixed(2)}<br>
-        回收金額: -$${recycleTotal.toFixed(2)}<br>
-        合計 = $${total.toFixed(2)} - $${recycleTotal.toFixed(2)} = $${(total - recycleTotal).toFixed(2)}`;
+        summary += \`商品 \${i + 1} — 金額: $\${taxedGold.toFixed(2)}\n商品 \${i + 1} — 工錢: $\${taxedLabor.toFixed(2)}\n\`;
+
+        purchaseTotal += taxedGold + taxedLabor;
+      }
+
+      summary += \`回收金額: -$\${recycleTotal.toFixed(2)}\n\`;
+      const diff = Math.round(purchaseTotal - recycleTotal);
+      summary += \`合計 = $\${purchaseTotal.toFixed(2)} - $\${recycleTotal.toFixed(2)} = $\${diff.toFixed(2)}\`;
+
+      document.getElementById('result').textContent = \`應付差額（含稅）：$\${diff}\`;
+      document.getElementById('summary').textContent = '計算式：\n' + summary;
     }
   </script>
 </body>
