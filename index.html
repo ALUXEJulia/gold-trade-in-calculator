@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ALUXE Gold Trade-IN Calculator</title>
+  <title>ALUXE Gold Trade-IN Calculator｜黃金回收試算機</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 860px; margin: auto; padding: 20px; }
     h1 { text-align: center; }
@@ -22,29 +22,29 @@
   </style>
 </head>
 <body>
-  <h1>ALUXE<br/>Gold Trade-IN Calculator</h1>
+  <h1>ALUXE<br/>Gold Trade-IN Calculator｜黃金回收試算機</h1>
 
   <div>
-    <label>999金價/g（未稅）：<input id="price999" type="number" oninput="calculate()"></label>
-    <label>916金價/g（未稅）：<input id="price916" type="number" oninput="calculate()"></label>
+    <label>999 Gold Price/g (excl. GST)｜999金價/g（未稅）： <input id="price999" type="number" oninput="calculate()"></label>
+    <label>916 Gold Price/g (excl. GST)｜916金價/g（未稅）： <input id="price916" type="number" oninput="calculate()"></label>
   </div>
 
   <div class="flex-row">
     <div class="section half">
-      <h2>回收項目</h2>
+      <h2>Trade-In Items｜回收項目</h2>
       <div id="recycleList"></div>
-      <button onclick="addRecycleItem()">新增回收項目</button>
+      <button onclick="addRecycleItem()">Add Trade-In Item｜新增回收項目</button>
     </div>
 
     <div class="section half">
-      <h2>購買項目</h2>
+      <h2>Purchase Items｜購買項目</h2>
       <div id="buyList"></div>
-      <button onclick="addBuyItem()">新增購買項目</button>
+      <button onclick="addBuyItem()">Add Purchase Item｜新增購買項目</button>
     </div>
   </div>
 
   <div class="section">
-    <h2>應付差額（含稅9%）</h2>
+    <h2>Balance (9% GST)｜應付差額（9% 稅）</h2>
     <div class="steps" id="diffSteps"></div>
     <div id="finalResult" class="output"></div>
   </div>
@@ -63,9 +63,9 @@
       const id = recycleCount++;
       container.insertAdjacentHTML('beforeend', `
         <div class="group" id="recycle-${id}">
-          <label>純度：<select onchange="calculate()" id="purity-${id}"><option value="999">999</option><option value="916">916</option></select></label>
-          <label>回收金重 (g)：<input type="number" id="weight-${id}" oninput="calculate()"></label>
-          <div class="formula">公式：金價 × 重量 × (1 - 15%) × 含稅</div>
+          <label>Purity｜純度： <select onchange="calculate()" id="purity-${id}"><option value="999">999</option><option value="916">916</option></select></label>
+          <label>Weight (g)｜金重 (g)： <input type="number" id="weight-${id}" oninput="calculate()"></label>
+          <div class="formula">Formula: Price × Weight × (1 - 15%) × GST<br/>公式：金價 × 重量 × (1 - 15%) × 稅</div>
           <div class="steps" id="recycleSteps-${id}"></div>
           <div class="output" id="recycleResult-${id}"></div>
         </div>
@@ -78,9 +78,9 @@
       const id = buyCount++;
       container.insertAdjacentHTML('beforeend', `
         <div class="group" id="buy-${id}">
-          <label>購買金重 (g)：<input type="number" id="buyWeight-${id}" oninput="calculate()"></label>
-          <label>原價手工費（未稅）：<input type="number" id="laborFee-${id}" oninput="calculate()"></label>
-          <div class="formula">公式：（金價 × 重量 + 手工費 × (1 - 15%)）× 含稅</div>
+          <label>Weight (g)｜金重 (g)： <input type="number" id="buyWeight-${id}" oninput="calculate()"></label>
+          <label>Workmanship (excl. GST)｜原價手工費（未稅）： <input type="number" id="laborFee-${id}" oninput="calculate()"></label>
+          <div class="formula">Formula: (Price × Weight + Workmanship × (1 - 15%)) × GST<br/>公式：（金價 × 重量 + 手工費 × (1 - 15%)）× 稅</div>
           <div class="steps" id="buySteps-${id}"></div>
           <div class="output" id="buyResult-${id}"></div>
         </div>
@@ -104,7 +104,7 @@
 
         const output = document.getElementById(`recycleResult-${i}`);
         const steps = document.getElementById(`recycleSteps-${i}`);
-        if (output) output.textContent = `含稅回收金額：$${taxed.toFixed(1)}`;
+        if (output) output.textContent = `Trade-In Value (incl. GST)｜含稅回收金額： $${taxed.toFixed(1)}`;
         if (steps) steps.textContent = `${price} × ${weight} × (1 - 15%) × ${taxRate}`;
         recycleStepsSummary.push(`${taxed.toFixed(1)}`);
       }
@@ -120,7 +120,7 @@
 
         const output = document.getElementById(`buyResult-${i}`);
         const steps = document.getElementById(`buySteps-${i}`);
-        if (output) output.textContent = `含稅購買金額：$${roundedSubtotal.toFixed(1)}`;
+        if (output) output.textContent = `Purchase Value (incl. GST)｜含稅購買金額： $${roundedSubtotal.toFixed(1)}`;
         if (steps) steps.textContent = `(${price999} × ${weight} + ${fee} × 0.85) × ${taxRate}`;
         buyStepsSummary.push(`${roundedSubtotal.toFixed(1)}`);
       }
@@ -128,7 +128,7 @@
       const diff = Math.round(totalBuy - totalRecycle);
       const buyPart = buyStepsSummary.length > 1 ? `(${buyStepsSummary.join(' + ')})` : buyStepsSummary.join(' + ');
       const recyclePart = recycleStepsSummary.length > 1 ? `(${recycleStepsSummary.join(' + ')})` : recycleStepsSummary.join(' + ');
-      document.getElementById('finalResult').textContent = `應補差額：$${diff}`;
+      document.getElementById('finalResult').textContent = `Balance｜應補差額： $${diff}`;
       document.getElementById('diffSteps').textContent = `${buyPart} - ${recyclePart} = ${diff}`;
     }
 
