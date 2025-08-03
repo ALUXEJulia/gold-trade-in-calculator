@@ -1,154 +1,141 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ALUXE Gold Trade-IN Calculator</title>
   <style>
-    body {
-      font-family: Arial;
-      max-width: 600px;
-      margin: 30px auto;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input, select {
-      width: 100%;
-      padding: 6px;
-      margin-top: 5px;
-    }
-    .section {
-      margin-top: 20px;
-      border-top: 1px dashed #aaa;
-      padding-top: 10px;
-    }
-    .result {
-      margin-top: 20px;
-      font-weight: bold;
-      font-size: 1.3em;
-      color: #c00;
-    }
-    .formula, .tax-note {
-      font-size: 0.9em;
-      color: #555;
-      margin-top: 5px;
-    }
-    .summary {
-      white-space: pre-line;
-      font-size: 0.95em;
-      margin-top: 10px;
-    }
-    button {
-      padding: 6px 12px;
-      margin-top: 10px;
-    }
+    body { font-family: Arial, sans-serif; max-width: 860px; margin: auto; padding: 20px; }
+    h1 { text-align: center; }
+    .section { margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 6px; font-size: 16px; box-sizing: border-box; }
+    .output { font-weight: bold; margin-top: 10px; font-size: 18px; color: red; }
+    .formula { font-size: 12px; color: #666; margin-top: 5px; }
+    .steps { font-size: 13px; color: #000; margin-top: 5px; white-space: pre-wrap; }
+    .group { border: 1px solid #ddd; padding: 10px; margin-top: 10px; }
+    .flex-row { display: flex; gap: 20px; flex-wrap: wrap; }
+    .half { flex: 1; min-width: 360px; }
+    button { margin-top: 10px; }
+    .footer { text-align: center; font-size: 12px; margin-top: 40px; color: #888; }
   </style>
 </head>
 <body>
-  <h2>ALUXE Gold Trade-IN Calculator</h2>
+  <h1>ALUXE<br/>Gold Trade-IN Calculator</h1>
 
-  <label>999 Gold Price (未稅): <input type="number" id="goldPrice999" step="0.01" /></label>
-  <label>916 Gold Price (未稅): <input type="number" id="goldPrice916" step="0.01" /></label>
+  <div>
+    <label>999金價/g（未稅）：<input id="price999" type="number" oninput="calculate()"></label>
+    <label>916金價/g（未稅）：<input id="price916" type="number" oninput="calculate()"></label>
+  </div>
 
-  <div class="section">
-    <h4>回收商品</h4>
-    <div id="recycleItems"></div>
-    <button onclick="addRecycleItem()">➕ 新增回收商品</button>
+  <div class="flex-row">
+    <div class="section half">
+      <h2>回收項目</h2>
+      <div id="recycleList"></div>
+      <button onclick="addRecycleItem()">新增回收項目</button>
+    </div>
+
+    <div class="section half">
+      <h2>購買項目</h2>
+      <div id="buyList"></div>
+      <button onclick="addBuyItem()">新增購買項目</button>
+    </div>
   </div>
 
   <div class="section">
-    <h4>購買商品</h4>
-    <div id="purchaseItems"></div>
-    <button onclick="addPurchaseItem()">➕ 新增購買商品</button>
+    <h2>應付差額（含稅9%）</h2>
+    <div class="steps" id="diffSteps"></div>
+    <div id="finalResult" class="output"></div>
   </div>
 
-  <div class="section">
-    <div class="result" id="result"></div>
-    <div class="summary" id="summary"></div>
+  <div class="footer">
+    03.08.25 V1.0
   </div>
 
   <script>
-    const TAX = 1.09;
+    const taxRate = 1.09;
     let recycleCount = 0;
-    let purchaseCount = 0;
+    let buyCount = 0;
 
     function addRecycleItem() {
-      const container = document.getElementById('recycleItems');
-      const html = \`
-        <div id="recycle-\${recycleCount}">
-          <label>回收純度:
-            <select id="recyclePurity-\${recycleCount}">
-              <option value="999">999</option>
-              <option value="916">916</option>
-            </select>
-          </label>
-          <label>回收金重 (g): <input type="number" step="0.01" id="recycleWeight-\${recycleCount}" oninput="calculate()"/></label>
+      const container = document.getElementById('recycleList');
+      const id = recycleCount++;
+      container.insertAdjacentHTML('beforeend', `
+        <div class="group" id="recycle-${id}">
+          <label>純度：<select onchange="calculate()" id="purity-${id}"><option value="999">999</option><option value="916">916</option></select></label>
+          <label>回收金重 (g)：<input type="number" id="weight-${id}" oninput="calculate()"></label>
+          <div class="formula">公式：金價 × 重量 × (1 - 15%) × 含稅</div>
+          <div class="steps" id="recycleSteps-${id}"></div>
+          <div class="output" id="recycleResult-${id}"></div>
         </div>
-      \`;
-      container.insertAdjacentHTML('beforeend', html);
-      recycleCount++;
+      `);
+      calculate();
     }
 
-    function addPurchaseItem() {
-      const container = document.getElementById('purchaseItems');
-      const html = \`
-        <div id="purchase-\${purchaseCount}">
-          <label>商品 \${purchaseCount + 1} — 金重 (g): <input type="number" step="0.01" id="prodWeight-\${purchaseCount}" oninput="calculate()"/></label>
-          <div class="formula" id="prodFormula-\${purchaseCount}"></div>
-          <div class="formula" id="prodTax-\${purchaseCount}"></div>
-          <label>商品 \${purchaseCount + 1} — 工錢 (未稅): <input type="number" step="0.01" id="prodLabor-\${purchaseCount}" oninput="calculate()"/></label>
-          <div class="tax-note" id="prodLaborTax-\${purchaseCount}"></div>
+    function addBuyItem() {
+      const container = document.getElementById('buyList');
+      const id = buyCount++;
+      container.insertAdjacentHTML('beforeend', `
+        <div class="group" id="buy-${id}">
+          <label>購買金重 (g)：<input type="number" id="buyWeight-${id}" oninput="calculate()"></label>
+          <label>原價手工費（未稅）：<input type="number" id="laborFee-${id}" oninput="calculate()"></label>
+          <div class="formula">公式：（金價 × 重量 + 手工費 × (1 - 15%)）× 含稅</div>
+          <div class="steps" id="buySteps-${id}"></div>
+          <div class="output" id="buyResult-${id}"></div>
         </div>
-      \`;
-      container.insertAdjacentHTML('beforeend', html);
-      purchaseCount++;
+      `);
+      calculate();
     }
 
     function calculate() {
-      const gp999 = parseFloat(document.getElementById('goldPrice999').value) || 0;
-      const gp916 = parseFloat(document.getElementById('goldPrice916').value) || 0;
+      const price999 = parseFloat(document.getElementById('price999').value) || 0;
+      const price916 = parseFloat(document.getElementById('price916').value) || 0;
 
-      let recycleTotal = 0;
+      let totalRecycle = 0;
+      let recycleStepsSummary = [];
       for (let i = 0; i < recycleCount; i++) {
-        const purity = document.getElementById('recyclePurity-' + i).value;
-        const weight = parseFloat(document.getElementById('recycleWeight-' + i).value) || 0;
-        const price = purity === '999' ? gp999 : gp916;
-        const value = price * weight * 0.85;
-        recycleTotal += value * TAX;
+        const weight = parseFloat(document.getElementById(`weight-${i}`)?.value || 0);
+        const purity = document.getElementById(`purity-${i}`)?.value;
+        const price = purity === '999' ? price999 : price916;
+        const subtotal = price * weight * 0.85;
+        const taxed = Math.round(subtotal * taxRate * 10) / 10;
+        totalRecycle += taxed;
+
+        const output = document.getElementById(`recycleResult-${i}`);
+        const steps = document.getElementById(`recycleSteps-${i}`);
+        if (output) output.textContent = `含稅回收金額：$${taxed.toFixed(1)}`;
+        if (steps) steps.textContent = `${price} × ${weight} × (1 - 15%) × ${taxRate}`;
+        recycleStepsSummary.push(`${taxed.toFixed(1)}`);
       }
 
-      let summary = '';
-      let purchaseTotal = 0;
-      for (let i = 0; i < purchaseCount; i++) {
-        const weight = parseFloat(document.getElementById('prodWeight-' + i).value) || 0;
-        const labor = parseFloat(document.getElementById('prodLabor-' + i).value) || 0;
+      let totalBuy = 0;
+      let buyStepsSummary = [];
+      for (let i = 0; i < buyCount; i++) {
+        const weight = parseFloat(document.getElementById(`buyWeight-${i}`)?.value || 0);
+        const fee = parseFloat(document.getElementById(`laborFee-${i}`)?.value || 0);
+        const subtotal = (price999 * weight + fee * 0.85) * taxRate;
+        const roundedSubtotal = Math.round(subtotal * 10) / 10;
+        totalBuy += roundedSubtotal;
 
-        const goldValue = weight * gp999;
-        const taxedGold = goldValue * TAX;
-        const taxedLabor = labor * TAX;
-
-        document.getElementById('prodFormula-' + i).textContent = \`\${gp999} × \${weight} =\`;
-        document.getElementById('prodTax-' + i).textContent = \`未稅: $\${goldValue.toFixed(2)}  含稅價: $\${taxedGold.toFixed(2)}\`;
-        document.getElementById('prodLaborTax-' + i).textContent = \`含稅價: $\${taxedLabor.toFixed(2)}\`;
-
-        summary += \`商品 \${i + 1} — 金額: $\${taxedGold.toFixed(2)}\n商品 \${i + 1} — 工錢: $\${taxedLabor.toFixed(2)}\n\`;
-
-        purchaseTotal += taxedGold + taxedLabor;
+        const output = document.getElementById(`buyResult-${i}`);
+        const steps = document.getElementById(`buySteps-${i}`);
+        if (output) output.textContent = `含稅購買金額：$${roundedSubtotal.toFixed(1)}`;
+        if (steps) steps.textContent = `(${price999} × ${weight} + ${fee} × 0.85) × ${taxRate}`;
+        buyStepsSummary.push(`${roundedSubtotal.toFixed(1)}`);
       }
 
-      summary += \`回收金額: -$\${recycleTotal.toFixed(2)}\n\`;
-      const diff = Math.round(purchaseTotal - recycleTotal);
-      summary += \`合計 = $\${purchaseTotal.toFixed(2)} - $\${recycleTotal.toFixed(2)} = $\${diff.toFixed(2)}\`;
-
-      document.getElementById('result').textContent = \`應付差額（含稅）：$\${diff}\`;
-      document.getElementById('summary').textContent = '計算式：\n' + summary;
+      const diff = Math.round(totalBuy - totalRecycle);
+      const buyPart = buyStepsSummary.length > 1 ? `(${buyStepsSummary.join(' + ')})` : buyStepsSummary.join(' + ');
+      const recyclePart = recycleStepsSummary.length > 1 ? `(${recycleStepsSummary.join(' + ')})` : recycleStepsSummary.join(' + ');
+      document.getElementById('finalResult').textContent = `應補差額：$${diff}`;
+      document.getElementById('diffSteps').textContent = `${buyPart} - ${recyclePart} = ${diff}`;
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      addRecycleItem();
+      addBuyItem();
+    });
   </script>
 </body>
 </html>
