@@ -131,13 +131,13 @@
             <div class="steps">Gold Price (excl. GST)｜金價(未稅)： ${price999} x ${weight} = ${goldExcl}</div>
             <div class="steps">Gold Price (incl. GST)｜金價(含稅)： ${price999} x ${weight} x 1.09 = ${goldIncl.toFixed(0)}</div>
             <div class="steps">Workmanship (excl. GST)｜原價手工費(未稅)： ${fee}</div>
-            <div class="steps">Workmanship (excl. GST)｜原價手工費(未稅)： ${fee} -15% = ${feeExcl.toFixed(0)}</div>
-            <div class="steps">Workmanship (incl. GST)｜原價手工費(含稅)： ${feeExcl.toFixed(0)} × 1.09 = ${feeIncl.toFixed(0)}</div>
+            <div class="steps">Disc. Workmanship (excl. GST)｜折後手工費(未稅)： ${fee} -15% = ${feeExcl.toFixed(0)}</div>
+            <div class="steps">Disc. Workmanship (incl. GST)｜折後手工費(含稅)： ${feeExcl.toFixed(0)} × 1.09 = ${feeIncl.toFixed(0)}</div>
           `;
         }
 
         if (steps) {
-          steps.innerHTML = `Formula: (Price × Weight + Workmanship -15%) × GST<br>公式： (金價 × 重量 + 手工費 -15%) × 稅`;
+          steps.innerHTML = `Formula: (Price × Weight + (Workmanship -15%)) × GST<br>公式： (金價 × 重量 + (原價手工費 -15%)) × 稅`;
         }
 
         const output = document.getElementById(`buyResult-${i}`);
