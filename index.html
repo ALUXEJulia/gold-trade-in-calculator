@@ -1,22 +1,22 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ALUXE Gold Trade-IN Calculator</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 880px; margin: auto; padding: 20px; }
+    body { font-family: Arial, sans-serif; max-width: 1400px; margin: auto; padding: 20px; }
     h1 { text-align: center; }
     .section { margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px; }
     label { display: block; margin-top: 10px; }
     input, select { width: 100%; padding: 6px; font-size: 16px; box-sizing: border-box; }
     .output { font-weight: bold; margin-top: 10px; font-size: 18px; color: red; }
     .formula { font-size: 12px; color: #666; margin-top: 5px; white-space: pre-wrap; }
-    .steps { font-size: 13px; color: #000; margin-top: 5px; white-space: pre-wrap; }
+    .steps { font-size: 13px; color: #000; margin-top: 5px; white-space: nowrap; }
+    .steps.wrap { white-space: normal; } /* only final formula lines may wrap */
     .group { border: 1px solid #ddd; padding: 10px; margin-top: 10px; }
-    .flex-row { display: flex; gap: 20px; flex-wrap: wrap; }
-    .half { flex: 1; min-width: 360px; }
+    .flex-row { display: flex; gap: 24px; flex-wrap: nowrap; align-items: flex-start; }
+    .half { flex: 1 1 0; min-width: 0; } /* two fixed columns left/right */
     button { margin-top: 10px; }
     .footer { text-align: center; font-size: 12px; margin-top: 40px; color: #888; }
     .bold { font-weight: bold; }
@@ -26,8 +26,15 @@
   <h1>ALUXE<br/>Gold Trade-IN Calculator</h1>
 
   <div>
-    <label>999 Gold Price/g (excl. GST)｜999金價/g（未稅）：<input id="price999" type="number" oninput="calculate()"></label>
-    <label>916 Gold Price/g (excl. GST)｜916金價/g（未稅）：<input id="price916" type="number" oninput="calculate()"></label>
+    <label>999 Gold Price/g (excl. GST)｜999金價/g（未稅）：
+      <input id="price999" type="number" step="0.01" placeholder="eg. 185" oninput="calculate()">
+    </label>
+    <label>916 Gold Price/g (excl. GST)｜916金價/g（未稅）：
+      <input id="price916" type="number" step="0.01" placeholder="eg. 175" oninput="calculate()">
+    </label>
+    <label>Gold Price Discount (excl. GST)｜金價優惠/g（含稅）：
+      <input id="goldDisc" type="number" step="0.01" placeholder="eg. 5" oninput="calculate()">
+    </label>
   </div>
 
   <div class="flex-row">
@@ -51,7 +58,7 @@
   </div>
 
   <div class="footer">
-    03.08.25 V1.4
+    03.08.25 V2.2.1
   </div>
 
   <script>
@@ -65,8 +72,8 @@
       container.insertAdjacentHTML('beforeend', `
         <div class="group" id="recycle-${id}">
           <label>Purity｜純度：<select onchange="calculate()" id="purity-${id}"><option value="999">999</option><option value="916">916</option></select></label>
-          <label>Weight｜回收金重 (g)：<input type="number" id="weight-${id}" oninput="calculate()"></label>
-          <div class="formula">Formula: Price × Weight -15% × GST<br>公式：金價 × 重量 -15% × 稅</div>
+          <label>Weight｜回收金重 (g)：<input type="number" step="0.01" id="weight-${id}" placeholder="eg. 10" oninput="calculate()"></label>
+          <div class="formula">Formula: (Gold Price - Gold Price Discount) × Weight × (1-15%) × GST<br>公式： (金價 - 金價優惠) × 重量 × (1-15%) × 稅</div>
           <div class="steps" id="recycleSteps-${id}"></div>
           <div class="output" id="recycleResult-${id}"></div>
         </div>
@@ -79,83 +86,121 @@
       const id = buyCount++;
       container.insertAdjacentHTML('beforeend', `
         <div class="group" id="buy-${id}">
-          <label>Weight｜金重 (g)：<input type="number" id="buyWeight-${id}" oninput="calculate()"></label>
-          <label>Workmanship (excl. GST)｜原價手工費（未稅）：<input type="number" id="laborFee-${id}" oninput="calculate()"></label>
+          <label>Weight｜金重 (g)：<input type="number" step="0.01" id="buyWeight-${id}" placeholder="eg. 10" oninput="calculate()"></label>
+          <label>Workmanship (excl. GST)｜原價手工費（未稅）：<input type="number" step="1" id="laborFee-${id}" placeholder="eg. 100" oninput="calculate()"></label>
+          <label>Workmanship Discount％｜手工費優惠%：<input type="number" step="0.1" id="laborDisc-${id}" placeholder="eg. 15（不用輸入％）" oninput="calculate()"></label>
           <div id="buyDetail-${id}"></div>
-          <div id="buySteps-${id}" class="steps"></div>
+          <div id="buySteps-${id}" class="steps wrap"></div>
           <div id="buyResult-${id}" class="output"></div>
         </div>
       `);
       calculate();
     }
 
-    function calculate() {
-      const price999 = parseFloat(document.getElementById('price999').value) || 0;
-      const price916 = parseFloat(document.getElementById('price916').value) || 0;
-
-      let totalRecycle = 0;
-      let recycleStepsSummary = [];
-      for (let i = 0; i < recycleCount; i++) {
-        const weight = parseFloat(document.getElementById(`weight-${i}`)?.value || 0);
-        const purity = document.getElementById(`purity-${i}`)?.value;
-        const price = purity === '999' ? price999 : price916;
-        const subtotal = price * weight * 0.85;
-        const taxed = Math.round(subtotal * taxRate * 10) / 10;
-        totalRecycle += taxed;
-
-        const output = document.getElementById(`recycleResult-${i}`);
-        const steps = document.getElementById(`recycleSteps-${i}`);
-        if (output) output.textContent = `含稅回收金額：$${taxed.toFixed(1)}`;
-        if (steps) steps.textContent = `${price} × ${weight} -15% × ${taxRate}`;
-        recycleStepsSummary.push(`${taxed.toFixed(1)}`);
-      }
-
-      let totalBuy = 0;
-      let buyStepsSummary = [];
-      for (let i = 0; i < buyCount; i++) {
-        const weight = parseFloat(document.getElementById(`buyWeight-${i}`)?.value || 0);
-        const fee = parseFloat(document.getElementById(`laborFee-${i}`)?.value || 0);
-        const detail = document.getElementById(`buyDetail-${i}`);
-        const steps = document.getElementById(`buySteps-${i}`);
-
-        const goldExcl = price999 * weight;
-        const goldIncl = goldExcl * taxRate;
-        const feeExcl = fee * (1 - 0.15);
-        const feeIncl = feeExcl * taxRate;
-        const total = goldIncl + feeIncl;
-        const roundedTotal = Math.round(total * 10) / 10;
-        totalBuy += roundedTotal;
-
-        if (detail) {
-          detail.innerHTML = `
-            <div class="steps">Gold Price (excl. GST)｜金價(未稅)： ${price999} x ${weight} = ${goldExcl}</div>
-            <div class="steps">Gold Price (incl. GST)｜金價(含稅)： ${price999} x ${weight} x 1.09 = ${goldIncl.toFixed(0)}</div>
-            <div class="steps">Workmanship (excl. GST)｜原價手工費(未稅)： ${fee}</div>
-            <div class="steps">Disc. Workmanship (excl. GST)｜折後手工費(未稅)： ${fee} -15% = ${feeExcl.toFixed(0)}</div>
-            <div class="steps">Disc. Workmanship (incl. GST)｜折後手工費(含稅)： ${feeExcl.toFixed(0)} × 1.09 = ${feeIncl.toFixed(0)}</div>
-          `;
-        }
-
-        if (steps) {
-          steps.innerHTML = `Formula: (Price × Weight + (Workmanship -15%)) × GST<br>公式： (金價 × 重量 + (原價手工費 -15%)) × 稅`;
-        }
-
-        const output = document.getElementById(`buyResult-${i}`);
-        if (output) output.innerHTML = `Purchase Value (incl. GST)｜含稅購買金額：<span class="bold">$${roundedTotal}</span>`;
-        buyStepsSummary.push(`${roundedTotal}`);
-      }
-
-      const diff = Math.round(totalBuy - totalRecycle);
-      const buyPart = buyStepsSummary.length > 1 ? `(${buyStepsSummary.join(' + ')})` : buyStepsSummary.join(' + ');
-      const recyclePart = recycleStepsSummary.length > 1 ? `(${recycleStepsSummary.join(' + ')})` : recycleStepsSummary.join(' + ');
-      document.getElementById('finalResult').textContent = `應補差額：$${diff}`;
-      document.getElementById('diffSteps').textContent = `${buyPart} - ${recyclePart} = ${diff}`;
+    function safeVal(id) {
+      var el = document.getElementById(id);
+      if (!el) return 0;
+      var v = parseFloat(el.value);
+      return isNaN(v) ? 0 : v;
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      addRecycleItem();
-      addBuyItem();
-    });
+    function calculate() {
+      try {
+        const base999 = safeVal('price999');
+        const base916 = safeVal('price916');
+        const priceDisc = safeVal('goldDisc');
+
+        const eff999 = Math.max(base999 - priceDisc, 0);
+        const eff916 = Math.max(base916 - priceDisc, 0);
+
+        let totalRecycle = 0;
+        let recycleStepsSummary = [];
+        for (let i = 0; i < recycleCount; i++) {
+          const weight = safeVal(`weight-${i}`);
+          const puritySel = document.getElementById(`purity-${i}`);
+          const purity = puritySel ? puritySel.value : '999';
+          const price = purity === '999' ? eff999 : eff916;
+          const base = purity === '999' ? base999 : base916;
+          const subtotal = price * weight * 0.85;
+          const taxed = Math.round(subtotal * taxRate * 10) / 10;
+          totalRecycle += taxed;
+
+          const output = document.getElementById(`recycleResult-${i}`);
+          const steps = document.getElementById(`recycleSteps-${i}`);
+          if (output) output.textContent = `含稅回收金額：$${taxed.toFixed(1)}`;
+          if (steps) steps.textContent = `(${base} - ${priceDisc}) × ${weight} × (1 -15%) × ${taxRate}`;
+          recycleStepsSummary.push(`${taxed.toFixed(1)}`);
+        }
+
+        let totalBuy = 0;
+        let buyStepsSummary = [];
+        for (let i = 0; i < buyCount; i++) {
+          const weight = safeVal(`buyWeight-${i}`);
+          const fee = safeVal(`laborFee-${i}`);
+          const discPct = safeVal(`laborDisc-${i}`);
+          const disc = discPct / 100.0;
+
+          const detail = document.getElementById(`buyDetail-${i}`);
+
+          const goldExcl = eff999 * weight;
+          const goldIncl = goldExcl * taxRate;
+
+          const feeAfterPctExcl = fee * (1 - disc);
+          const feeIncl = feeAfterPctExcl * taxRate;
+
+          const total = goldIncl + feeIncl;
+          const roundedTotal = Math.round(total * 10) / 10;
+          totalBuy += roundedTotal;
+
+          if (detail) {
+            detail.innerHTML = `
+              <div class="steps">Gold Price (excl. GST)｜金價(未稅)： (${base999} - ${priceDisc}) × ${weight} = ${goldExcl}</div>
+              <div class="steps">Gold Price (incl. GST)｜金價(含稅)： ${goldExcl.toFixed(0)} × 1.09 = ${goldIncl.toFixed(0)}</div>
+              <div class="steps">Workmanship (excl. GST)｜原價手工費(未稅)： ${fee}</div>
+              <div class="steps">Disc. Workmanship (excl. GST)｜折後手工費(未稅)： ${fee} × (1-${discPct}%) = ${feeAfterPctExcl.toFixed(0)}</div>
+              <div class="steps">Disc. Workmanship (incl. GST)｜折後手工費(含稅)： ${feeAfterPctExcl.toFixed(0)} × 1.09 = ${feeIncl.toFixed(0)}</div>
+            `;
+          }
+
+          const buySteps = document.getElementById(`buySteps-${i}`);
+          if (buySteps) {
+            buySteps.innerHTML = `Formula: ((Gold Price - Gold Price Discount) × Weight × GST) + (Workmanship × (1 - Workmanship Discount %) × GST)
+<br>公式： ((金價 - 金價折扣) × 重量 × 稅) + (原價手工費 × (1 - 手工費優惠%) × 稅)`;
+          }
+
+          const output = document.getElementById(`buyResult-${i}`);
+          if (output) output.innerHTML = `Purchase Value (incl. GST)｜含稅購買金額：<span class="bold">$${roundedTotal}</span>`;
+          buyStepsSummary.push(`${roundedTotal}`);
+        }
+
+        const diff = Math.round(totalBuy - totalRecycle);
+        const buyPart = buyStepsSummary.length > 1 ? `(${buyStepsSummary.join(' + ')})` : buyStepsSummary.join(' + ');
+        const recyclePart = recycleStepsSummary.length > 1 ? `(${recycleStepsSummary.join(' + ')})` : recycleStepsSummary.join(' + ');
+        document.getElementById('finalResult').textContent = `應補差額：$${diff}`;
+        document.getElementById('diffSteps').textContent = `${buyPart} - ${recyclePart} = ${diff}`;
+      } catch (e) {
+        console.error('Calculation error:', e);
+      }
+    }
+
+    let __inited = false;
+    function init() {
+      if (__inited) return;
+      __inited = true;
+      try {
+        addRecycleItem();
+        addBuyItem();
+      } catch (e) {
+        console.error('Init error:', e);
+      }
+    }
+    // Run once whether DOM is already ready or not
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+      init();
+    }
+    window.addEventListener('load', init, { once: true });
   </script>
 </body>
 </html>
