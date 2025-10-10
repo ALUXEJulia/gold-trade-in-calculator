@@ -12,8 +12,8 @@ export default function App() {
     fetch("/diamond_data.json")
       .then((res) => res.json())
       .then((d) => {
-        setData(filtered);
-        const first = filtered[0];
+        setData(d);
+        const first = d[0];
         setColor(first.color);
         setClarity(first.clarity);
       });
